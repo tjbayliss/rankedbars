@@ -1,0 +1,18 @@
+{
+    "vars" : {
+            "xAxisLabel":"Count",
+            "xAxisScale":[0,600],
+            "margin_sm": [0, 70, 0, 60],
+            "margin_md": [0, 70, 0, 60],
+            "margin_lg": [0, 70, 0, 60],        
+            "aspectRatio_sm" : [4,7],
+            "aspectRatio_md" : [1,1],
+            "aspectRatio_lg" : [1,1],        
+            "mobileBreakpoint" : 510,                            
+            "x_num_ticks_sm_md_lg" : [6,8,10],
+            "centre_line" : false,
+            "centre_line_value" : 0
+    }
+}
+
+

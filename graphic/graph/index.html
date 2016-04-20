@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+	
+		<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600|Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
+		<title>Differencing Ranking</title>
+
+		<meta name="description" content="">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+		<link rel="stylesheet" href="../lib/style-chosen.css">
+		<link rel="stylesheet" href="../lib/globalStyle.css" />
+		<link rel="stylesheet" href="../lib/bootstrap.min.css">
+		<link rel="stylesheet" href="../lib/jquery-ui-1.10.4.custom.min.css">    
+		<link rel="stylesheet" href="../lib/style-chosen.css">
+		<link rel="stylesheet" href="../lib/owl.carousel.css">
+		<link rel="stylesheet" href="../lib/owl.theme.default.css">
+		
+		<style type="text/css">
+		
+			.negative {
+				fill: #fdbb30;
+				stroke:#fdbb30;
+				stroke-width:2px;
+			}
+			.positive { 
+				fill: #bed630;
+				stroke:#bed630;
+				stroke-width:0px;
+			}
+			.selected {
+				fill: #0d78a7;
+			}
+			
+		
+			.background0 { background: #666; }
+			.background1 { background: #780000; }     
+
+			#header{ height:50px; }
+		
+			/* y-axis full width grid lines */
+			#graphic .grid .tick /* required */
+			{
+				stroke: #CCC;
+				stroke-width: 1px;
+				shape-rendering: crispEdges;
+			}
+			
+			.barGroups:hover {
+				cursor:pointer;
+			}
+			#FixbarsDiv{
+				position:absolute;
+				top:10px;
+				left:200px;
+			}
+		
+		</style>
+		
+	</head>
+	
+	<body>
+
+
+		
+		
+		<div class="container-fluid">
+			   
+			<div class="row">
+			
+				<div class="col-sm-12" id="header">
+				
+					<div id="FixbarsDiv">				
+						<label><input type="checkbox" id="Fixbars">Fix bars</label>
+					</div>
+				
+				</div> 
+			</div>
+				
+			<div class="row">
+
+				<div class="col-md-12" >
+				
+					<div class="col-md-12" id="graphic"></div>
+						
+				</div>	
+			
+			</div>
+			
+		</div>   
+
+	   
+		<script src="../lib/jquery.js" type="text/javascript"></script>
+		<script src="../lib/d3.v3.5.min.js" type="text/javascript"></script>
+		<script src="../lib/modernizr.svg.min.js" type="text/javascript"></script>
+		<script src="../lib/pym.js" type="text/javascript"></script>
+		<script src="../lib/chosen.jquery.js" type="text/javascript"></script>
+		
+		<script src="../lib/bootstrap.min.js"></script>
+		<script src="../lib/jquery-ui-1.10.4.custom.min.js"></script>    
+		<script src="../lib/jquery.ui.labeledslider.js"></script>
+		<script src="../lib/chosen.jquery.js" type="text/javascript"></script>
+		
+		<script>
+
+			var graphic = $('#graphic');
+			var keypoints = $('#keypoints');
+			var header = $("#header");
+			var footer = $(".footer");
+			var pymChild = null;
+			
+			var FDS = {};
+			
+			var names = [];
+			var bars = {};
+			var sortOrder = [ 'name' , 'value' ];
+			var dataStreams = [ "value1", "value2", "value3", "value4", "value5", "value6", "value7", "value8", "value9", "value10" ];
+			var innerPadding = [25,25,25,25];
+				
+			var x, y;
+			var xAxis, yAxis;
+			var svg;
+			
+			var selectedbarID = -1;
+			
+			function drawGraphic(width) {
+			
+			
+				var threshold_md = 788;
+				var threshold_sm = FDS.optional.mobileBreakpoint; 
+			   							  
+				//set variables for chart dimensions dependent on width of #graphic
+				if (graphic.width() < threshold_sm) {        	
+						var margin = {top: FDS.optional.margin_sm[0], right: FDS.optional.margin_sm[1], bottom: FDS.optional.margin_sm[2], left: FDS.optional.margin_sm[3]}; 
+						var chart_width = graphic.width() - margin.left - margin.right;
+						var height = Math.ceil((chart_width * FDS.optional.aspectRatio_sm[1]) / FDS.optional.aspectRatio_sm[0]) - margin.top - margin.bottom;
+				} else if (graphic.width() < threshold_md){
+						var margin = {top: FDS.optional.margin_md[0], right: FDS.optional.margin_md[1], bottom: FDS.optional.margin_md[2], left: FDS.optional.margin_md[3]}; 
+						var chart_width = graphic.width() - margin.left - margin.right;
+						var height = Math.ceil((chart_width * FDS.optional.aspectRatio_md[1]) / FDS.optional.aspectRatio_md[0]) - margin.top - margin.bottom;
+				} else {
+						var margin = {top: FDS.optional.margin_lg[0], right: FDS.optional.margin_lg[1], bottom: FDS.optional.margin_lg[2], left: FDS.optional.margin_lg[3]}
+						var chart_width = graphic.width() - margin.left - margin.right;
+						var height = Math.ceil((chart_width * FDS.optional.aspectRatio_lg[1]) / FDS.optional.aspectRatio_lg[0]) - margin.top - margin.bottom;
+				}				
+
+				// clear out existing graphics
+				graphic.empty();
+				
+				d3.select("#selectionArray_chosen").style("padding" , "10px");
+				d3.select("#dataSelectionArray_chosen").style("padding" , "10px").style("left" , (chart_width) + "px");
+				
+				var bar = d3.svg.line()
+					.y(function(d) { return y(d.name); })
+					.x(function(d) { return x(d.amt); });
+					
+
+				// parse data into columns
+				for (var column in graphic_data[0]) {
+					if (column == 'name') continue;
+					bars[column] = graphic_data.map(function(d) {
+						return {
+							'name': d.name,
+							'amt': +d[column]
+						};
+					});
+				}						
+
+				//create svg for chart
+				svg = d3.select('#graphic')
+							.append('svg')
+							.attr("id", 'svg1')
+							.attr("width", chart_width + margin.left + margin.right)
+							.attr("height", height + margin.top + margin.bottom)
+							.append("g")
+							.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+							
+
+				//create svg for chart
+				svg2 = d3.select('#header')
+							.append('svg')
+							.attr("id", 'svg2')
+							.attr("width",  chart_width + margin.left + margin.right)
+							.attr("height", header.height())
+							.attr("transform", "translate(" + (chart_width/2) + "," + 0 + ")")
+							.append("g")
+							.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+							
+				console.log(graphic_data)
+							
+				x = d3.scale.linear().range([ 0, chart_width ]);
+				xAxis = d3.svg.axis().scale(x).orient('bottom');
+				
+				y = d3.scale.ordinal().rangeRoundBands([0, height-innerPadding[2]], .1);
+				y.domain(graphic_data.map(function(d) { return d.name; }));
+				yAxis = d3.svg.axis().scale(y).orient("left");		
+								
+				//specify number or ticks on x axis
+				if (graphic.width() <= threshold_sm) { xAxis.ticks(FDS.optional.x_num_ticks_sm_md_lg[0]) }
+				else if (graphic.width() <= threshold_md){ xAxis.ticks(FDS.optional.x_num_ticks_sm_md_lg[1]); }
+				else { xAxis.ticks(FDS.optional.x_num_ticks_sm_md_lg[2]); }
+												
+				x.domain([ -[d3.max(bars[FDS.selectedDataVariable], function(v) {
+								var n = v.amt;
+								return Math.ceil(n/10)*10;
+							})], [d3.max(bars[FDS.selectedDataVariable], function(v) {
+								var n = v.amt;
+								return Math.ceil(n/10)*10;
+							})]]);				
+
+					
+				// svg text labels ... 
+				svg2.append("text")
+					.attr("class" , "info")
+					.attr("id" , "nameInfo")
+					.attr("x" , x(0))
+					.attr("y" , 5)	
+					.style("text-anchor" , "end")
+					.style("stroke", "none")
+					.style("fill", "#505050")
+					.style("font-weight", "bold")
+					.style("font-size", "14px")
+					.text("");
+					
+				svg2.append("text")
+					.attr("class" , "info")
+					.attr("id" , "valueInfo")
+					.attr("x" , x(0)+30)
+					.attr("y" , 5)					
+					.style("text-anchor" , "start")
+					.style("stroke", "none")
+					.style("fill", "#505050")
+					.style("font-weight", "bold")
+					.style("font-size", "14px")
+					.text("");	
+					
+				svg.append('g')
+					.attr('class', 'x axis')
+					.attr('id', 'xAxis')
+					.attr("transform", "translate(" + (0) + ", " + (height-innerPadding[2]) + ")")
+					.call(xAxis)
+					.append("text")
+					.attr("y", 25)
+					.attr("x",chart_width)
+					.attr("dy", ".71em")
+					.style("text-anchor", "end")
+					.text("value");
+						
+				var xticks = svg.selectAll('#xAxis').selectAll('.tick');	
+				xticks.append('svg:line')
+					.attr( 'class' , "tick" )
+					.attr( 'y1' , 0 )
+					.attr( 'y2' , -height )
+					.attr( 'x0' , 0 )
+					.attr( 'x1',  0 );
+										
+				var j = 0;
+									
+						
+						
+				// append fixed shadow bars to fixed groups  ...
+				svg.selectAll(".bar")
+					.data(bars[FDS.selectedDataVariable])
+					.enter()
+					.append('g')
+						.attr( "class" , "fixedBarGroups" )
+						.attr( "id" , function(d,i){ return "fixedBarGroup" + i; })
+						.attr("transform", function(d,i){ return "translate(" + (0) + ", " + y(d.name) + ")"; })
+						.append("rect")
+						.attr( "class" , "fixedShadowBars" )
+						.attr( "id" , function(d,i){ return "fixedBar" + i; })
+						.attr("transform", function (d,i){ return "translate(" + (x(Math.min(0, d.amt))) + ", " + (0) + ")"; })
+						.attr("width", function (d,i){ return 0 + Math.abs(x(d.amt) - x(0)); })
+						.attr("height", y.rangeBand() )
+						.style("fill" , "#CCC")
+						.style( "opacity" , "0.5")
+						.style("pointer-events" , "none");							
+						
+						
+/*						
+				svg.selectAll(".fixedBarGroups")
+					.append("text")
+					.attr( "class" , "fixedShadowContent" )
+					.attr("transform", function(d,i){					
+						if ( d.amt>=0 ) { return "translate(" + (x(0)+10) + ", " + (y.rangeBand()/2) + ")";}
+						else { return "translate(" + (x(0)-10) + ", " + (y.rangeBand()/2) + ")"; }
+					})
+					.style("text-anchor", function(d,i){					
+						if ( d.amt>=0 ) { return "start"; }
+						else { return "end"; }
+					})
+					.style("stroke", "none")
+					.style("fill", "#A0A0A0")
+					.style("font-weight", "bold")
+					.style( "opacity" , "0.0")
+					.style("font-size", "12px")
+					.attr("dy", ".4em")
+					.text(function(d,i){ return d.name })
+					.style("pointer-events" , "none");	
+*/
+					
+					
+				d3.select("input").on("change", change);					
+									
+						
+						
+				// append dynamic coloured bars to transitioning groups  ...
+				svg.selectAll(".bar")
+					.data(bars[FDS.selectedDataVariable])
+					.enter()
+					.append('g')
+						.attr( "class" , "barGroups" )
+						.attr( "id" , function(d,i){ return "barGroup" + i; })
+						.attr("transform", function(d,i){ return "translate(" + (0) + ", " + y(d.name) + ")"; })
+						.append("rect")					
+						.attr('class', function(d, i) {
+							if ( d.amt<0 ) { return 'dataBars negative'; }
+							else { return 'dataBars positive'; }
+						})
+						.attr( "id" ,function(d,i){ return "dataBar" + i; })
+						.attr("transform", function (d,i){ return "translate(" + (x(Math.min(0, d.amt))) + ", " + (0) + ")"; })
+						.attr("width", function (d,i){ return 0 + Math.abs(x(d.amt) - x(0)); })
+						.attr("height", y.rangeBand() )
+						.style("pointer-events" , "none")
+						.style( "fill-opacity" , "1.00");
+					
+				
+				if ( selectedbarID != -1 ) { select_HighlightedBar(selectedbarID); }
+				
+						
+				svg.selectAll(".barGroups")
+					.append("rect")
+						.attr( "class" , "transparentBars" )
+						.attr( "id" , function(d,i){ return "transparentBar" + i; })
+						.attr("transform", "translate(" + (0) + ", " + (0) + ")")
+						.attr("width", x.range()[1] )
+						.attr("height", y.rangeBand() )
+						.style( "fill" , "#CCC")
+						.style( "opacity" , "0.0")
+						.on("mouseover", function(d,i){
+							var ele = this.id;		
+							d3.select("#" + ele).style("opacity" , "0.33");
+							d3.select("#nameInfo").text(d.name);
+							d3.select("#valueInfo").text(d.amt);
+							d3.select("#nameInfo1").html(d.name);
+							d3.select("#valueInfo1").html(d.amt);							
+							showTooltip(ele, d , "mouseover");
+							return;
+						})
+						.on("mouseout", function(d,i){
+							var ele = this.id;		
+							d3.select("#" + ele).style("opacity" , "0.0");
+							d3.select("#nameInfo").text('');
+							d3.select("#valueInfo").text('');
+							d3.select("#nameInfo1").html('');
+							d3.select("#valueInfo1").html('');
+							removeTooltip();
+							return;
+						})
+						.on("click", function(d,i){	
+
+							if ( selectedbarID == -1 ) {							
+								select_HighlightedBar(i);
+								selectedbarID = i;								
+								return;
+							}
+							else {
+							
+								if ( i != selectedbarID ) {
+									deselect_HighlightedBar();							
+									select_HighlightedBar(i);
+									selectedbarID = i;									
+									return;
+								}
+								else {
+									deselect_HighlightedBar();
+									return;
+								}
+							}
+						});		
+						
+						
+				svg.selectAll(".barGroups")
+					.append("text")
+					.attr("transform", function(d,i){					
+						if ( d.amt>=0 ) { return "translate(" + (x(0)+10) + ", " + (y.rangeBand()/2) + ")";}
+						else { return "translate(" + (x(0)-10) + ", " + (y.rangeBand()/2) + ")"; }
+					})
+					.style("text-anchor", function(d,i){					
+						if ( d.amt>=0 ) { return "start"; }
+						else { return "end"; }
+					})
+					.style("stroke", "none")
+					.style("fill", "#505050")
+					.style("font-weight", "bold")
+					.style("font-size", "12px")
+					.attr("dy", ".4em")
+					.text(function(d,i){ return d.name })
+					.style("pointer-events" , "none");
+										
+				//create y axis, if x axis doesn't start at 0 drop x axis accordingly	
+				svg.append('g')
+					.attr('class', 'y axis')
+					.attr('id', 'yAxis')
+					.attr('transform', 'translate(' + ((chart_width/2)) + ',' + 0 + ')')
+					.call(yAxis)
+					.style("fill" , "none" )
+					.style("stroke" , "none" )
+					.style("shape-rendering" , "crispEdges ");	
+				
+					
+					
+								
+				//use pym to calculate chart dimensions	
+				if (pymChild) {
+					pymChild.sendHeight();
+				}
+			}
+
+			//check whether browser can cope with svg	
+			if (Modernizr.svg) {
+			   //load config 
+				d3.json("config.json", function(error, config) {
+				
+					FDS=config;			
+
+					console.log(FDS);
+					
+					// initialise selection list variables displayed
+					FDS.selectedVariableIndex = 0;
+					FDS.selectedVariable = sortOrder[FDS.selectedVariableIndex];
+				
+					/* Build proxy array for use in building DataGroup selection list ... */			
+					var valueArray = [];
+					for ( var i=0 ; i < sortOrder.length; i++ ) { valueArray[i] = i; }
+									
+					/* construct left-hand selection FDS.vars. */	
+					var selectionArray = d3.zip( sortOrder , valueArray );
+					FDS.selectionArray = selectionArray.sort(function(b, a){ return d3.descending(a[0], b[0])});
+						
+					// Build option menu for data Groups
+					var selectionArrayList = d3.select("#header")
+						.append("select")
+						.attr("id","selectionArray")
+						.attr("style","width:15%")
+						.attr("class","chosen-select");
+		
+					selectionArrayList.selectAll("p")
+						.data(FDS.selectionArray)
+						.enter()
+						.append("option")
+						.attr("value", function(d){ return d[1]}) 
+						.text(function(d){ return d[0]});			
+					
+					$('#selectionArray').chosen({width: "12%", allow_single_deselect: true, placeholder_text_single:"Select category"}).on('change',function(evt,params)
+					{
+						if(typeof params != 'undefined')
+						{				
+							// update selectedIndex and name variables of newly selected option on selection list
+							FDS.selectedVariableIndex = params.selected;
+							FDS.selectedVariable = sortOrder[FDS.selectedVariableIndex];		
+							//pymChild = new pym.Child({ renderCallback: drawGraphic});
+						
+							transitionData();
+							
+						} // end if ....
+						
+						else {
+						} // end else ....
+						
+					});
+					
+					$('#selectionArray').val(FDS.selectedVariableIndex);	
+					$('#selectionArray').trigger("chosen:updated");
+
+					
+					
+					
+					
+					var data = [];
+					
+					
+					//load chart data
+					d3.csv("data.csv", function(error, data) {
+						graphic_data = data;
+						
+						fieldnames = d3.keys(/*data*/graphic_data[0]).filter(function(key) { return key; });						
+						graphic_data.forEach(function(d,i) { names.push(d.name); });
+																		
+						//use pym to create iframed chart dependent on specified variables
+						pymChild = new pym.Child({ renderCallback: drawGraphic});	
+					});
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					// initialise selection list variables displayed
+					FDS.dataVariableIndex = 0;
+					FDS.selectedDataVariable = dataStreams[FDS.dataVariableIndex];
+				
+					/* Build proxy array for use in building DataGroup selection list ... */			
+					var valueArray = [];
+					for ( var i=0 ; i < dataStreams.length; i++ ) { valueArray[i] = i; }
+									
+					/* construct left-hand selection FDS.vars. */	
+					var dataVariableArray = d3.zip( dataStreams , valueArray );
+					FDS.dataVariableArray = dataVariableArray.sort(function(b, a){ return d3.descending(a[1], b[1])});
+						
+					// Build option menu for data Groups
+					var dataSelectionArrayList = d3.select("#header")
+						.append("select")
+						.attr("id","dataSelectionArray")
+						.attr("style","width:15%")
+						.attr("class","chosen-select");
+		
+					dataSelectionArrayList.selectAll("p")
+						.data(dataVariableArray)
+						.enter()
+						.append("option")
+						.attr("value", function(d){ return d[1]}) 
+						.text(function(d){ return d[0]});			
+					
+					$('#dataSelectionArray').chosen({width: "12%", allow_single_deselect: true, placeholder_text_single:"Select category"}).on('change',function(evt,params)
+					{
+						if(typeof params != 'undefined')
+						{				
+							// update selectedIndex and name variables of newly selected option on selection list
+							FDS.dataVariableArray = params.selected;
+							FDS.selectedDataVariable = dataStreams[FDS.dataVariableArray];
+							
+							// initialise selection list variables displayed
+							FDS.selectedVariableIndex = 0;
+							FDS.selectedVariable = sortOrder[FDS.selectedVariableIndex];
+							$('#selectionArray').val(FDS.selectedVariableIndex);	
+							$('#selectionArray').trigger("chosen:updated");
+							
+							d3.selectAll(".fixedShadowContent").style("opacity" , "0.0");
+							$("#Fixbars").prop("checked" , false);
+							
+													
+							pymChild = new pym.Child({ renderCallback: drawGraphic});
+						
+							//transitionData();
+							
+						} // end if ....
+						
+						else {
+						} // end else ....
+						
+					});
+					
+					$('#dataSelectionArray').val(FDS.dataVariableIndex);	
+					$('#dataSelectionArray').trigger("chosen:updated");		
+
+				})
+
+			} else {
+				 //use pym to create iframe containing fallback image (which is set as default)
+				 pymChild = new pym.Child();
+				if (pymChild) {
+					pymChild.sendHeight();
+				}
+			}
+			
+			
+			function transitionData(){
+			
+			
+				console.log(FDS.selectedDataVariable);
+				console.log(bars[FDS.selectedDataVariable]);
+									
+									
+				// Transitioning of coloured data bars ... 
+				// Copy-on-write since tweens are evaluated after a delay.
+				var y0 = y.domain(bars[FDS.selectedDataVariable].sort(FDS.selectedVariable == 'value'
+					? function(a, b) { return b.amt - a.amt; }
+					: function(a, b) { return d3.ascending(a.name, b.name); })
+					.map(function(d) { return d.name; }))
+					.copy();
+													
+				svg.selectAll(".barGroups").sort(function(a, b) { return y0(a.name) - y0(b.name); });
+					
+				var transition = svg.transition().ease("cubic").duration(750), delay = function(d, i) { return i * 50; };
+			
+				transition.selectAll(".barGroups")
+					.delay(delay)
+					.attr("transform", function(d,i){ return "translate(" + (0) + ", " + (y0(d.name)) + ")" })
+															
+				transition.select(".y.axis")
+					.call(yAxis)
+					.selectAll("g")
+					.delay(delay);
+									
+									
+									
+									
+									
+				// Transitioning of greyed shadow data bars ... ONLY IF 'Fix bars' check is TRUE
+				if ( $("#Fixbars").prop("checked") == false ) {
+				
+					// Transitioning of coloured data bars ... 
+					// Copy-on-write since tweens are evaluated after a delay.
+					var y1 = y.domain(bars[FDS.selectedDataVariable].sort(FDS.selectedVariable == 'value'
+						? function(a, b) { return b.amt - a.amt; }
+						: function(a, b) { return d3.ascending(a.name, b.name); })
+						.map(function(d) { return d.name; }))
+						.copy();
+														
+					svg.selectAll(".fixedBarGroups").sort(function(a, b) { return y1(a.name) - y1(b.name); });
+						
+					var transition = svg.transition().ease("cubic").duration(750), delay = function(d, i) { return i * 50; };
+				
+					transition.selectAll(".fixedBarGroups")
+						.delay(delay)
+						.attr("transform", function(d,i){ return "translate(" + (0) + ", " + (y1(d.name)) + ")" })
+																
+					transition.select(".y.axis")
+						.call(yAxis)
+						.selectAll("g")
+						.delay(delay);
+									
+				}// end if ... 
+				
+				
+					
+				return;
+				
+			}// end function transitionData()	  
+
+		
+		
+		
+			
+			/*
+				NAME: 			showTooltip
+				DESCRIPTION: 	function used to display D3 style tooltip. Show the tooltip on the hovered over circle instead of the Voronoi grid
+				CALLED FROM:	transitionData
+								drawGraphic
+				CALLS:			n/a	
+				REQUIRES: 		d - data item 
+								fid - ID of selected dotsrc - where has function been called from/what kind of voronoi layer is being moused over (FULL or TEMP)
+				RETURNS: 		n/a
+			*/
+			function showTooltip(fid , d , src) {
+				
+				//Save the circle element (so not the voronoi which is triggering the hover event)
+				//in a variable by using the unique class of the voronoi (CountryCode)
+				var element;		
+				element = d3.select("#" + fid);
+				
+									
+				//Show the tooltip over the "element" variable (the circle) instead of "this"
+				$(element).popover({
+						placement: 'auto top',
+						container: '#graphic',
+						id:"toolTip",
+						trigger: 'manual',
+						html : true,
+						content: function() {
+							return "<span style='font-size: 14px; text-align: center;'>Statistics:</br></br><b>(" + d.name + ")</b> " + (d.amt) + " units </b></br></span>";
+						}
+				});
+				$(element).popover('show');
+				
+
+				return;
+				
+			}//end function showTooltip 
+
+			
+			
+			
+			
+			/*
+				NAME: 			removeTooltip
+				DESCRIPTION: 	function used to hide D3 style tooltip. Hide the tooltip when the mouse moves away
+				CALLED FROM:	transitionData
+								drawGraphic
+				CALLS:			n/a	
+				REQUIRES: 		n/a
+				RETURNS: 		n/a
+			*/
+			function removeTooltip() {
+				
+				$('.popover').each(function() { $(this).remove(); });
+
+				return;
+
+			}//function removeTooltip 
+			
+			
+			
+			function deselect_HighlightedBar(){
+			
+				// highlight newly selected bar ... 
+				var thisClass = d3.select("#dataBar" + selectedbarID).attr("class").replace(" selected" , '');
+				d3.select("#dataBar" + selectedbarID).attr("class" , thisClass);
+				
+				selectedbarID = -1;
+
+				return;
+			
+			}// end function deselect_HighlightedBar()
+			
+			
+			function select_HighlightedBar(fid){
+			
+				// highlight newly selected bar ... 
+				var thisClass = d3.select("#dataBar" + fid).attr("class");
+				d3.selectAll(".dataBars")/*.style("opacity" , "0.75")*/;
+				d3.select("#dataBar" + fid).attr("class" , thisClass + " selected")/*.style("opacity" , "1.00")*/;							
+	
+				return;
+				
+			}// end function select_HighlightedBar()
+			
+			
+			
+			
+			
+			function change() {
+			
+				
+							
+				if ( $("#Fixbars").prop("checked") == true ) {
+					d3.selectAll(".fixedShadowContent").style("opacity" , "0.5");
+				}
+				else {
+					d3.selectAll(".fixedShadowContent").style("opacity" , "0.0");
+				}
+			
+				return;
+			
+			} // end function change()
+
+				
+			
+		</script>
+	</body>
+</html>

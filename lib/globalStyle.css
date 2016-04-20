@@ -1,0 +1,259 @@
+
+
+
+        html, body, div, span, applet, object, iframe,
+		h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+		a, abbr, acronym, address, big, cite, code,
+		del, dfn, em, img, ins, kbd, q, s, samp,
+		small, strike, strong, sub, sup, tt, var,
+		b, u, i, center,
+		dl, dt, dd, ol, ul, li,
+		fieldset, form, label, legend,
+		table, caption, tbody, tfoot, thead, tr, th, td,
+		article, aside, canvas, details, embed, 
+		article, aside, canvas, details, embed, 
+		article, aside, canvas, details, embed, 
+		figure, figcaption, footer, header, hgroup, 
+		menu, nav, output, ruby, section, summary,
+		time, mark, audio, video
+		{
+			margin: 0;
+			padding: 0;
+			border: 0;
+			font-size: 100%;
+			font: inherit;
+			vertical-align: baseline;
+		}
+		
+		
+		
+        html
+		{
+			-webkit-text-size-adjust: none; /* prevent font scaling in landscape */
+		}
+
+
+
+        body /* required */
+		{
+            font-family: 'Open Sans', sans-serif;
+			font-weight:400;
+        }
+		
+		
+
+        a, /* required */
+		a:link,
+		a:visited
+		{
+            color: #4774CC;
+            text-decoration: none;
+        }
+		
+		
+		
+        a:hover, /* required */
+		a:active
+		{
+			opacity: 0.7;
+		}
+		
+		
+		
+        /*.footnotes p,*/
+        .footer  /* required */
+		{
+            font-size: 14px;
+            color: #808080;
+			font-weight:100;
+			padding-bottom:15px;
+        }
+		
+		
+		/*
+        #graphic1
+		{
+            width: 100%;
+        }
+		*/
+		
+		
+        #graphic1:before,
+        #graphic1:after
+		{
+            content: " ";
+            display: table;
+        }
+		
+		
+        #graphic2:before,
+        #graphic2:after
+		{
+            content: " ";
+            display: table;
+        }
+		
+		
+        #graphic3:before,
+        #graphic3:after
+		{
+            content: " ";
+            display: table;
+        }
+		
+		
+		
+        #graphic4:before,
+        #graphic4:after
+		{
+            content: " ";
+            display: table;
+        }
+		
+		
+        #graphic1:after  { clear: both; }
+        #graphic2:after  { clear: both; }
+        #graphic3:after  { clear: both; }
+        #graphic4:after  { clear: both; }
+		
+		
+
+        #graphic1 img /* required */
+		{
+            max-width: 100%;
+            height: auto;
+        }
+		
+		
+
+		.svgRect{
+			fill: white;	
+		}
+		
+		/* y-axis tick labels */
+       #graphic .axis,  #graphic1 .axis, #graphic2 .axis, #graphic3 .axis, #graphic4 .axis /* required */
+		{
+            font-size: 10px;
+            fill: #666;
+        }
+		
+		
+		/* x-axis baseline; not to be confused with centreline. Can consider overlaying this with #centreline */
+        #graphic .axis path, #graphic1 .axis path, #graphic2 .axis path, #graphic3 .axis path, #graphic4 .axis path  /* required */
+		{
+            fill: none;
+            stroke: #666;
+            shape-rendering: crispEdges;
+        }
+		
+		
+		/* axis ticks */
+		#graphic .axis line , #graphic1 .axis line , #graphic2 .axis line, #graphic3 .axis line, #graphic4 .axis line, #graphic5 .axis line, #graphic6 .axis line/* required */
+		{
+            fill: none;
+            stroke: #ccc;
+            shape-rendering: crispEdges;
+        }
+		
+		/* y-axis line path */
+        #graphic .axis.y path , #graphic1 .axis.y path , #graphic2 .axis.y path , #graphic3 .axis.y path  , #graphic4 .axis.y path  , #graphic5 .axis.y path , #graphic6 .axis.y path  /* required */
+		{
+			display: none;
+		}
+		
+	
+		
+		/* y-axis full width grid lines */
+        #graphic .grid .tick, #graphic1 .grid .tick , #graphic2 .grid .tick, #graphic3 .grid .tick, #graphic4 .grid .tick, #graphic5 .grid .tick, #graphic6 .grid .tick /* required */
+		{
+            stroke:#CCC;
+            stroke-width: 1px;
+            opacity: 0.75;
+            shape-rendering: crispEdges;
+        }
+		
+		
+		
+		/* 
+        
+		{
+            fill: none; 
+            stroke-width: 2px;
+			stroke-linecap:round;
+			stroke-linejoin:round;
+        }
+		*/
+		
+		/* legend elements */
+        #graphic1 .key li, #graphic2 .key li, #graphic3 .key li, #graphic4 .key li/* required */
+		{
+            display: inline-block;
+            margin: 0 18px 0 0;
+            padding: 0;
+            line-height: 15px;
+        }
+		
+		
+
+        /* legend coloured elements */
+        #graphic1 .key b, #graphic2 .key b, #graphic3 .key b, #graphic4 .key b/* required */
+		{
+            display: inline-block;
+            width: 35px;
+            height: 15px;
+            margin-right: 6px;
+            float: left;
+			background-color:none;
+			margin-top:1px;
+        }
+
+				
+		
+		/* legend element labels */
+        #graphic1 .key label, #graphic2 .key label, #graphic3 .key label, #graphic4 .key label/* required */
+		{
+            white-space: nowrap;
+            font-size: 12px;
+            color: #333;
+            font-weight: normal;
+        }
+
+		
+		
+		/* y-axis units label */
+        #graphic1 .unit, #graphic2 .unit, #graphic3 .unit, #graphic4 .unit, #graphic5 .unit, #graphic6 .unit/* required */
+		{
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            fill: #333333;
+            text-align: left;/*
+			width:130px;*/
+			height:20px;
+			display:block;
+			float:none;
+			
+        }
+	 	 
+		#centreline /* required */
+		{
+			stroke:#666;
+			stroke-width:3px;		
+		}
+		
+		
+	
+		/* y- and x-axis tick text */
+		.domain/* required. BOTH MUST BE NONE */
+		{
+			fill:none;
+			stroke:none;	
+		}
+		
+		
+		.circles
+		{
+			float:left;	
+		}
+		
+		
+		
